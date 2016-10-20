@@ -125,9 +125,11 @@ if __name__ == '__main__':
     err_code = res[u'ErrorCode']
     msg = res[u'Message']
     print has_err, "x" + err_code, msg
+    time.sleep(0.5)
     while err_code != u'wait':
         res = json.load(ticketCheck(ticket_id, seat_type, headers))
         has_err = res[u'HasError']
         err_code = res[u'ErrorCode']
         msg = res[u'Message']
         print has_err, "x" + err_code, msg
+        time.sleep(5)
