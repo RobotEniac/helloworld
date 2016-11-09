@@ -101,7 +101,7 @@ def ticktack(hh, MM = 0, ss = 0):
     while time.time() + max_dlt + avg_rtt / 2.0  < due_date:
         time.sleep(0.1)
 
-    time.sleep(0.3) # magic number, avoid estimate time > server time
+    time.sleep(0.1) # magic number, avoid estimate time > server time
     t1, t2, t3 = getServerTime()
     # print "%.6f, %.6f, %.6f" % (t1, dlt, rtt)
     print max_dlt, avg_rtt
@@ -126,10 +126,11 @@ if __name__ == '__main__':
     msg = res[u'Message']
     print has_err, "x" + err_code, msg
     time.sleep(0.5)
-    while err_code != u'wait':
-        res = json.load(ticketCheck(ticket_id, seat_type, headers))
-        has_err = res[u'HasError']
-        err_code = res[u'ErrorCode']
-        msg = res[u'Message']
-        print has_err, "x" + err_code, msg
-        time.sleep(5)
+    if has_err != False:
+        while err_code != u'wait':
+            res = json.load(ticketCheck(ticket_id, seat_type, headers))
+            has_err = res[u'HasError']
+            err_code = res[u'ErrorCode']
+            msg = res[u'Message']
+            print has_err, "x" + err_code, msg
+            time.sleep(5)
