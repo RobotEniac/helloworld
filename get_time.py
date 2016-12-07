@@ -116,28 +116,6 @@ def ticktack(hh, MM = 0, ss = 0):
 
 if __name__ == '__main__':
     if len(sys.argv) < 4:
-        print "Usage:", sys.argv[0], "hour ticket_id seat_type."
+        print "Usage:", sys.argv[0], "hour minute second."
         exit(1)
-    ticktack(int(sys.argv[1]))
-    ticket_id = int(sys.argv[2])
-    seat_type = int(sys.argv[3])
-    headers = getHeaders(ticket_id, seat_type)
-    res = json.load(addTicket(ticket_id, seat_type, headers))
-    print res
-    #has_err = res[u'HasError']
-    #err_code = res[u'ErrorCode']
-    msg = res[u'Message']
-    print res
-    print msg
-    time.sleep(0.5)
-    i = 0
-    has_err = True
-    while has_err != False and i < 10:
-        res = json.load(ticketCheck(ticket_id, seat_type, headers))
-        has_err = res[u'HasError']
-        err_code=res[u'ErrorCode']
-        msg = res[u'Message']
-        time.sleep(1)
-        i += 1
-        print res
-        print has_err, err_code, msg
+    ticktack(int(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]))
