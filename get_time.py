@@ -52,7 +52,7 @@ def ticketCheck(ticket_id, seat_type, headers):
     params = urllib.urlencode(params_dict)
     url = '/TOrder/tickCheck'
     conn = httplib.HTTPConnection('shop.48.cn')
-    conn.request('GET', url, params, headers)
+    conn.request('POST', url, params, headers)
     resp = conn.getresponse()
     print resp.status, resp.reason
     return resp
@@ -116,31 +116,6 @@ def ticktack(hh, MM = 0, ss = 0):
 
 if __name__ == '__main__':
     if len(sys.argv) < 4:
-        print "Usage:", sys.argv[0], "hour ticket_id seat_type."
+        print "Usage:", sys.argv[0], "hour minute second."
         exit(1)
-    ticktack(int(sys.argv[1]))
-    ticket_id = int(sys.argv[2])
-    seat_type = int(sys.argv[3])
-    headers = getHeaders(ticket_id, seat_type)
-    res = json.load(addTicket(ticket_id, seat_type, headers))
-    print res
-    #has_err = res[u'HasError']
-    #err_code = res[u'ErrorCode']
-    msg = res[u'Message']
-    print res
-    print msg
-    time.sleep(0.5)
-    i = 0
-    has_err = True
-    while has_err != False and i < 10:
-        if i != 0:
-            time.sleep(5)
-        res = ticketCheck(ticket_id, seat_type, headers)
-        if res.status == 200:
-            res_json = json.load(res)
-            has_err = res_json[u'HasError']
-            err_code=res_json[u'ErrorCode']
-            msg = res_json[u'Message']
-            print res_json
-            print msg
-        i += 1
+    ticktack(int(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]))
