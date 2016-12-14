@@ -52,7 +52,7 @@ def ticketCheck(ticket_id, seat_type, headers):
     params = urllib.urlencode(params_dict)
     url = '/TOrder/tickCheck'
     conn = httplib.HTTPConnection('shop.48.cn')
-    conn.request('POST', url, params, headers)
+    conn.request('GET', url, params, headers)
     resp = conn.getresponse()
     print resp.status, resp.reason
     return resp
@@ -133,11 +133,14 @@ if __name__ == '__main__':
     i = 0
     has_err = True
     while has_err != False and i < 10:
-        res = json.load(ticketCheck(ticket_id, seat_type, headers))
-        has_err = res[u'HasError']
-        err_code=res[u'ErrorCode']
-        msg = res[u'Message']
-        time.sleep(1)
+        if i != 0:
+            time.sleep(5)
+        res = ticketCheck(ticket_id, seat_type, headers)
+        if res.status == 200:
+            res_json = json.load(res)
+            has_err = res_json[u'HasError']
+            err_code=res_json[u'ErrorCode']
+            msg = res_json[u'Message']
+            print res_json
+            print msg
         i += 1
-        print res
-        print has_err, err_code, msg
