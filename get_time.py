@@ -84,7 +84,7 @@ def ticktack(hh, MM = 0, ss = 0):
         time.sleep(0.1)
     max_dlt = 0.0
     avg_rtt = 0.0
-    check_time = 5
+    check_time = 15
     rate = 0.7
     for i in range(0, check_time):
         while time.time() < due_date - (check_time + 1 - i) * 5:
@@ -92,7 +92,7 @@ def ticktack(hh, MM = 0, ss = 0):
         t1, server_time, t2 = getServerTime()
         dlt = server_time - (t1 + t2) / 2.0
         rtt = t2 - t1
-        print "rtt = ", rtt, ", delta_t = ", dlt
+        print "rtt = ", rtt, ", delta_t = ", dlt, "server time = ", datetime.fromtimestamp(server_time)
         #if abs(dlt) > abs(max_dlt):
         #    max_dlt = dlt
         if i == 0:
