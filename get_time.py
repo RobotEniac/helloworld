@@ -10,7 +10,7 @@ from datetime import date
 from datetime import timedelta
 
 def getServerTime():
-    conn = httplib.HTTPConnection("shop.48.cn")
+    conn = httplib.HTTPSConnection("shop.48.cn", 443)
     #conn = httplib.HTTPConnection("115.231.96.204")
     client_time1 = time.time()
     conn.request("GET", "/pai/GetTime")

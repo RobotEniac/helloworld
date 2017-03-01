@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 import urllib
 import httplib
 import re
@@ -10,8 +11,7 @@ from datetime import date
 from datetime import timedelta
 
 def getServerTime():
-    conn = httplib.HTTPConnection("shop.48.cn")
-    #conn = httplib.HTTPConnection("115.231.96.204")
+    conn = httplib.HTTPSConnection("shop.48.cn", 443)
     client_time1 = time.time()
     conn.request("GET", "/pai/GetTime")
     client_time2 = time.time()
@@ -41,7 +41,7 @@ def getHeaders(ticket_id, seat_type):
             'Referer': header_ref,
             'Accept-Encoding': 'gzip, deflate',
             'Accept-Language': 'en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4,zh-TW;q=0.2',
-            'Cookie': getCookie("./cookie/haibo2.cookie")
+            'Cookie': getCookie("./cookie/haibo.cookie")
             }
     return headers
 
@@ -51,7 +51,7 @@ def ticketCheck(ticket_id, seat_type, headers):
     params_dict = {'id': ticket_id, 'r':0.5651687378367096}
     params = urllib.urlencode(params_dict)
     url = '/TOrder/tickCheck'
-    conn = httplib.HTTPConnection('shop.48.cn')
+    conn = httplib.HTTPSConnection('shop.48.cn', 443)
     conn.request('GET', url, params, headers)
     resp = conn.getresponse()
     print resp.status, resp.reason
@@ -67,7 +67,7 @@ def addTicket(ticket_id, seat_type, headers):
             }
     params = urllib.urlencode(params_dict)
     url = '/TOrder/add'
-    conn = httplib.HTTPConnection('shop.48.cn')
+    conn = httplib.HTTPSConnection('shop.48.cn', 443)
     conn.request('POST', url, params, headers)
     resp = conn.getresponse()
     print resp.status, resp.reason
@@ -122,25 +122,20 @@ if __name__ == '__main__':
     ticket_id = int(sys.argv[2])
     seat_type = int(sys.argv[3])
     headers = getHeaders(ticket_id, seat_type)
-    res = json.load(addTicket(ticket_id, seat_type, headers))
-    print res
-    #has_err = res[u'HasError']
-    #err_code = res[u'ErrorCode']
-    msg = res[u'Message']
-    print res
-    print msg
-    time.sleep(0.5)
-    i = 0
-    has_err = True
-    while has_err != False and i < 10:
-        if i != 0:
-            time.sleep(5)
+    res_str = addTicket(ticket_id, seat_type, headers)
+    res = json.load(res_str, 'utf8')
+    print json.dumps(res, ensure_ascii=False, sort_keys=True, indent=4)
+    start_time = time.time()
+    last_req = start_time - 2.5
+    while True:
+        time.sleep(0.1)
+        end_time = time.time()
+        if end_time - start_time > 10:
+            break
+        if end_time - last_req < 3:
+            continue
+        last_req = end_time
         res = ticketCheck(ticket_id, seat_type, headers)
         if res.status == 200:
             res_json = json.load(res)
-            has_err = res_json[u'HasError']
-            err_code=res_json[u'ErrorCode']
-            msg = res_json[u'Message']
-            print res_json
-            print msg
-        i += 1
+            print json.dumps(res_json, ensure_ascii=False, sort_keys=True, indent=4)
