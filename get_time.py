@@ -80,8 +80,8 @@ def ticktack(hh, MM = 0, ss = 0):
     due_date = datetime(today.year, today.month, today.day,
             hh, MM, ss)
     due_date = time.mktime(due_date.timetuple())
-    while due_date - time.time() < 5:
-        time.sleep(0.1)
+    if due_date < time.time():
+        return None;
     max_dlt = 0.0
     avg_rtt = 0.0
     check_time = 15
