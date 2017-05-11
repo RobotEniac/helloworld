@@ -85,25 +85,24 @@ def ticktack(hh, MM = 0, ss = 0):
     max_dlt = 0.0
     avg_rtt = 0.0
     check_time = 15
-    rate = 0.7
+    rate = 0.9
     for i in range(0, check_time):
-        while time.time() < due_date - (check_time + 1 - i) * 5:
-            time.sleep(0.1)
+        while time.time() < due_date - (check_time - i) * 2:
+            time.sleep(0.01)
         t1, server_time, t2 = getServerTime()
         dlt = server_time - (t1 + t2) / 2.0
         rtt = t2 - t1
         print "rtt = ", rtt, ", delta_t = ", dlt, "server time = ", datetime.fromtimestamp(server_time)
-        #if abs(dlt) > abs(max_dlt):
-        #    max_dlt = dlt
         if i == 0:
             max_dlt = dlt
+            max_rtt = rtt
         max_dlt = max_dlt * (1 - rate) + dlt * rate
         avg_rtt = avg_rtt * (1 - rate) + (t2 - t1) * rate
     # avg_rtt = avg_rtt / check_time
     while time.time() + max_dlt + avg_rtt / 2.0  < due_date:
-        time.sleep(0.1)
+        time.sleep(0.01)
 
-    time.sleep(0.1) # magic number, avoid estimate time > server time
+    time.sleep(0.008) # magic number, avoid estimate time > server time
     t1, t2, t3 = getServerTime()
     # print "%.6f, %.6f, %.6f" % (t1, dlt, rtt)
     print max_dlt, avg_rtt
@@ -116,26 +115,28 @@ def ticktack(hh, MM = 0, ss = 0):
 
 if __name__ == '__main__':
     if len(sys.argv) < 4:
-        print "Usage:", sys.argv[0], "hour ticket_id seat_type."
+        print "Usage:", sys.argv[0], "ticket_id seat_type count."
         exit(1)
-    ticktack(int(sys.argv[1]))
-    ticket_id = int(sys.argv[2])
-    seat_type = int(sys.argv[3])
-    headers = getHeaders(ticket_id, seat_type)
-    res_str = addTicket(ticket_id, seat_type, headers)
-    res = json.load(res_str, 'utf8')
-    print json.dumps(res, ensure_ascii=False, sort_keys=True, indent=4)
-    start_time = time.time()
-    last_req = start_time - 2.5
-    while True:
-        time.sleep(0.1)
-        end_time = time.time()
-        if end_time - start_time > 10:
-            break
-        if end_time - last_req < 3:
-            continue
-        last_req = end_time
-        res = ticketCheck(ticket_id, seat_type, headers)
-        if res.status == 200:
-            res_json = json.load(res)
-            print json.dumps(res_json, ensure_ascii=False, sort_keys=True, indent=4)
+    ticktack(20)
+    ticket_id = int(sys.argv[1])
+    seat_type = int(sys.argv[2])
+    count = int(sys.argv[3])
+    for i in range(0, count):
+        headers = getHeaders(ticket_id, seat_type)
+        res_str = addTicket(ticket_id, seat_type, headers)
+        res = json.load(res_str, 'utf8')
+        print json.dumps(res, ensure_ascii=False, sort_keys=True, indent=4)
+        start_time = time.time()
+        last_req = start_time - 2.5
+        while True:
+            time.sleep(0.1)
+            end_time = time.time()
+            if end_time - start_time > 10:
+                break
+            if end_time - last_req < 3:
+                continue
+            last_req = end_time
+            res = ticketCheck(ticket_id, seat_type, headers)
+            if res.status == 200:
+                res_json = json.load(res)
+                print json.dumps(res_json, ensure_ascii=False, sort_keys=True, indent=4)

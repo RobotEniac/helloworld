@@ -85,10 +85,10 @@ def ticktack(hh, MM = 0, ss = 0):
     max_dlt = 0.0
     avg_rtt = 0.0
     check_time = 15
-    rate = 0.7
+    rate = 0.9
     for i in range(0, check_time):
-        while time.time() < due_date - (check_time + 1 - i) * 5:
-            time.sleep(0.1)
+        while time.time() < due_date - (check_time - i) * 2:
+            time.sleep(0.01)
         t1, server_time, t2 = getServerTime()
         dlt = server_time - (t1 + t2) / 2.0
         rtt = t2 - t1
@@ -97,13 +97,14 @@ def ticktack(hh, MM = 0, ss = 0):
         #    max_dlt = dlt
         if i == 0:
             max_dlt = dlt
-        max_dlt = max_dlt * (1 - rate) + dlt * rate
-        avg_rtt = avg_rtt * (1 - rate) + (t2 - t1) * rate
-    # avg_rtt = avg_rtt / check_time
+            avg_rtt = rtt
+        else:
+            max_dlt = max_dlt * (1 - rate) + dlt * rate
+            avg_rtt = avg_rtt * (1 - rate) + rtt * rate
     while time.time() + max_dlt + avg_rtt / 2.0  < due_date:
-        time.sleep(0.1)
+        time.sleep(0.01)
 
-    time.sleep(0.1) # magic number, avoid estimate time > server time
+    time.sleep(0.009) # magic number, avoid estimate time > server time
     t1, t2, t3 = getServerTime()
     # print "%.6f, %.6f, %.6f" % (t1, dlt, rtt)
     print max_dlt, avg_rtt
