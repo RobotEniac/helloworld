@@ -10,12 +10,11 @@ from datetime import datetime
 from datetime import date
 from datetime import timedelta
 
-def getServerTime():
-    conn = httplib.HTTPSConnection("shop.48.cn", 443)
+def getServerTime(connection):
     client_time1 = time.time()
-    conn.request("GET", "/pai/GetTime")
+    connection.request("GET", "/pai/GetTime")
     client_time2 = time.time()
-    res = conn.getresponse()
+    res = connection.getresponse()
     if res.status == 200:
         data = res.read()
         server_time_str = int(re.search('\d+', data).group(0))
@@ -46,18 +45,18 @@ def getHeaders(ticket_id, seat_type):
     return headers
 
 
-def ticketCheck(ticket_id, seat_type, headers):
+def ticketCheck(connection, ticket_id, seat_type, headers):
     headers = getHeaders(ticket_id, seat_type)
     params_dict = {'id': ticket_id, 'r':0.5651687378367096}
     params = urllib.urlencode(params_dict)
     url = '/TOrder/tickCheck'
-    conn = httplib.HTTPSConnection('shop.48.cn', 443)
-    conn.request('GET', url, params, headers)
-    resp = conn.getresponse()
+    connection = httplib.HTTPSConnection('shop.48.cn', 443)
+    connection.request('GET', url, params, headers)
+    resp = connection.getresponse()
     print resp.status, resp.reason
     return resp
 
-def addTicket(ticket_id, seat_type, headers):
+def addTicket(connection, ticket_id, seat_type, headers):
     params_dict = {
             'id': ticket_id,
             'r': 0.5651687378367096,
@@ -67,13 +66,13 @@ def addTicket(ticket_id, seat_type, headers):
             }
     params = urllib.urlencode(params_dict)
     url = '/TOrder/add'
-    conn = httplib.HTTPSConnection('shop.48.cn', 443)
-    conn.request('POST', url, params, headers)
-    resp = conn.getresponse()
+    connection = httplib.HTTPSConnection('shop.48.cn', 443)
+    connection.request('POST', url, params, headers)
+    resp = connection.getresponse()
     print resp.status, resp.reason
     return resp
 
-def ticktack(hh, MM = 0, ss = 0):
+def ticktack(connection, hh, MM = 0, ss = 0):
     if hh == 0:
         return
     today = date.today()
@@ -89,7 +88,7 @@ def ticktack(hh, MM = 0, ss = 0):
     for i in range(0, check_time):
         while time.time() < due_date - (check_time - i) * 2:
             time.sleep(0.01)
-        t1, server_time, t2 = getServerTime()
+        t1, server_time, t2 = getServerTime(connection)
         dlt = server_time - (t1 + t2) / 2.0
         rtt = t2 - t1
         print "rtt = ", rtt, ", delta_t = ", dlt, "server time = ", datetime.fromtimestamp(server_time)
@@ -103,7 +102,7 @@ def ticktack(hh, MM = 0, ss = 0):
         time.sleep(0.01)
 
     time.sleep(0.008) # magic number, avoid estimate time > server time
-    t1, t2, t3 = getServerTime()
+    t1, t2, t3 = getServerTime(connection)
     # print "%.6f, %.6f, %.6f" % (t1, dlt, rtt)
     print max_dlt, avg_rtt
     dt1 = datetime.fromtimestamp(due_date)
@@ -117,13 +116,15 @@ if __name__ == '__main__':
     if len(sys.argv) < 4:
         print "Usage:", sys.argv[0], "ticket_id seat_type count."
         exit(1)
-    ticktack(20)
+    conn = httplib.HTTPSConnection('shop.48.cn', 443)
+    # ticktack(conn, 20)
+    ticktack(conn, 0)
     ticket_id = int(sys.argv[1])
     seat_type = int(sys.argv[2])
     count = int(sys.argv[3])
     for i in range(0, count):
         headers = getHeaders(ticket_id, seat_type)
-        res_str = addTicket(ticket_id, seat_type, headers)
+        res_str = addTicket(conn, ticket_id, seat_type, headers)
         res = json.load(res_str, 'utf8')
         print json.dumps(res, ensure_ascii=False, sort_keys=True, indent=4)
         start_time = time.time()
@@ -136,7 +137,7 @@ if __name__ == '__main__':
             if end_time - last_req < 3:
                 continue
             last_req = end_time
-            res = ticketCheck(ticket_id, seat_type, headers)
+            res = ticketCheck(conn, ticket_id, seat_type, headers)
             if res.status == 200:
                 res_json = json.load(res)
                 print json.dumps(res_json, ensure_ascii=False, sort_keys=True, indent=4)
