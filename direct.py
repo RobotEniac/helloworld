@@ -117,8 +117,7 @@ if __name__ == '__main__':
         print "Usage:", sys.argv[0], "ticket_id seat_type count."
         exit(1)
     conn = httplib.HTTPSConnection('shop.48.cn', 443)
-    ticktack(conn, 20)
-    #ticktack(conn, 0)
+    ticktack(conn, 0)
     ticket_id = int(sys.argv[1])
     seat_type = int(sys.argv[2])
     count = int(sys.argv[3])
