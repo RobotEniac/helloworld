@@ -91,17 +91,28 @@ def ticktack(connection, hh, MM = 0, ss = 0):
         t1, server_time, t2 = getServerTime(connection)
         dlt = server_time - (t1 + t2) / 2.0
         rtt = t2 - t1
-        print "rtt = ", rtt, ", delta_t = ", dlt, "server time = ", datetime.fromtimestamp(server_time)
+        print "rtt = ", rtt, ", delta_t = ", dlt, "server time = ", datetime.fromtimestamp(server_time),\
+                "local_time = ", datetime.fromtimestamp((t1 + t2) / 2.0)
         if i == 0:
             max_dlt = dlt
             max_rtt = rtt
         max_dlt = max_dlt * (1 - rate) + dlt * rate
         avg_rtt = avg_rtt * (1 - rate) + (t2 - t1) * rate
     # avg_rtt = avg_rtt / check_time
+    i = 0
     while time.time() + max_dlt + avg_rtt / 2.0  < due_date:
         time.sleep(0.01)
+        i += 1
+        if i % 100 == 0:
+            t1, server_time, t2 = getServerTime(connection)
+            dlt = server_time - (t1 + t2) / 2.0
+            rtt = t2 - t1
+            print "rtt = ", rtt, ", delta_t = ", dlt, "server time = ", datetime.fromtimestamp(server_time),\
+                    "local_time = ", datetime.fromtimestamp((t1 + t2) / 2.0)
+        if i > 10000000:
+            i = 0
 
-    time.sleep(0.008) # magic number, avoid estimate time > server time
+    # time.sleep(0.008) # magic number, avoid estimate time > server time
     t1, t2, t3 = getServerTime(connection)
     # print "%.6f, %.6f, %.6f" % (t1, dlt, rtt)
     print max_dlt, avg_rtt
