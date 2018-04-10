@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os/user"
 	"strconv"
 	"strings"
 	"time"
@@ -28,12 +29,14 @@ var ticket_id int
 var seat_type int
 var times int
 var need_tick bool
+var cookie_dir string
 
 func init() {
 	flag.IntVar(&ticket_id, "tid", 0, "ticket id")
 	flag.IntVar(&seat_type, "seat_type", 4, "seat type")
 	flag.IntVar(&times, "times", 1, "total request times")
 	flag.BoolVar(&need_tick, "tick", false, "need tick tack")
+	flag.StringVar(&cookie_dir, "cookie", "./haibo.cookie", "cookie dir")
 }
 
 func (rb ResponseBody) String() string {
@@ -93,9 +96,16 @@ func GetServerTime(client *http.Client) (start, server, end int64, err error) {
 }
 
 func GetCookies(path string) string {
-	cookie, err := ioutil.ReadFile(path)
+	real_path := path
+	parts := strings.Split(path, "/")
+	if len(parts) > 0 && parts[0] == "~" {
+		usr, _ := user.Current()
+		parts[0] = usr.HomeDir
+		real_path = strings.Join(parts, "/")
+	}
+	cookie, err := ioutil.ReadFile(real_path)
 	if err != nil {
-		log.Println("ReadFile(", path, ") failed: ", err)
+		log.Println("ReadFile(", real_path, ") failed: ", err)
 		return ""
 	}
 	str := string(cookie[:])
@@ -116,7 +126,7 @@ func GetHeaders(ticket_id, seat_type int) *http.Header {
 	headers.Add("Accept-Encoding", "gzip, deflate")
 	headers.Add("Accept-Language", "en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4,zh-TW;q=0.2")
 	headers.Add("Upgrade-Insecure-Requests", "1")
-	headers.Add("Cookie", GetCookies("./cookie/haibo.cookie"))
+	headers.Add("Cookie", GetCookies(cookie_dir))
 	return headers
 }
 
