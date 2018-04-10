@@ -3,13 +3,13 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -22,6 +22,18 @@ type ResponseBody struct {
 	ErrorCode    string `json:"ErrorCode"`
 	Message      string `json:"Message"`
 	ReturnObject string `json:"ReturnObject,omitempty"`
+}
+
+var ticket_id int
+var seat_type int
+var times int
+var need_tick bool
+
+func init() {
+	flag.IntVar(&ticket_id, "tid", 0, "ticket id")
+	flag.IntVar(&seat_type, "seat_type", 4, "seat type")
+	flag.IntVar(&times, "times", 1, "total request times")
+	flag.BoolVar(&need_tick, "tick", false, "need tick tack")
 }
 
 func (rb ResponseBody) String() string {
@@ -110,7 +122,7 @@ func GetHeaders(ticket_id, seat_type int) *http.Header {
 
 func AddTicket(client *http.Client, ticket_id int, seat_type int, headers *http.Header) *ResponseBody {
 	shop := "https://shop.48.cn/TOrder/add"
-	fmt.Println("URL:>", shop)
+	log.Println("URL:>", shop)
 	data := url.Values{}
 	data.Add("id", strconv.Itoa(ticket_id))
 	data.Add("r", "0.5651687378367096")
@@ -132,7 +144,7 @@ func AddTicket(client *http.Client, ticket_id int, seat_type int, headers *http.
 	}
 	defer resp.Body.Close()
 
-	fmt.Println("response Status:", resp.Status)
+	log.Println("response Status:", resp.Status)
 	if resp.StatusCode != 200 {
 		log.Println("response status not OK")
 		return nil
@@ -140,13 +152,12 @@ func AddTicket(client *http.Client, ticket_id int, seat_type int, headers *http.
 	body, _ := ioutil.ReadAll(resp.Body)
 	rb := &ResponseBody{}
 	err = json.Unmarshal(body, rb)
-	fmt.Println("response body:", rb)
 	return rb
 }
 
 func TicketCheck(client *http.Client, ticket_id int, headers *http.Header) *ResponseBody {
 	shop := "https://shop.48.cn/TOrder/tickCheck"
-	fmt.Println("URL:>", shop)
+	log.Println("URL:>", shop)
 	data := url.Values{}
 	data.Add("id", strconv.Itoa(ticket_id))
 	data.Add("r", "0.5651687378367096")
@@ -164,7 +175,7 @@ func TicketCheck(client *http.Client, ticket_id int, headers *http.Header) *Resp
 	}
 	defer resp.Body.Close()
 
-	fmt.Println("response Status:", resp.Status)
+	log.Println("response Status:", resp.Status)
 	if resp.StatusCode != 200 {
 		log.Println("response status not OK")
 		return nil
@@ -172,7 +183,6 @@ func TicketCheck(client *http.Client, ticket_id int, headers *http.Header) *Resp
 	body, _ := ioutil.ReadAll(resp.Body)
 	rb := &ResponseBody{}
 	err = json.Unmarshal(body, rb)
-	fmt.Println("response body:", rb)
 	return rb
 }
 
@@ -237,31 +247,53 @@ func TickTack(client *http.Client, hour, min, sec int) bool {
 }
 
 func main() {
-	if len(os.Args) < 4 {
-		fmt.Printf("Usage %s ticket_id seat_type\n", os.Args[0])
-		os.Exit(1)
-	}
-	// ticket_id, _ := strconv.Atoi(os.Args[1])
-	// seat_type, _ := strconv.Atoi(os.Args[2])
-	h, _ := strconv.Atoi(os.Args[1])
-	m, _ := strconv.Atoi(os.Args[2])
-	s, _ := strconv.Atoi(os.Args[3])
-	fmt.Println(h, m, s)
+	flag.Parse()
 	// transport layer
 	var netTransport = &http.Transport{
 		Dial: (&net.Dialer{
 			Timeout: 5 * time.Second,
 		}).Dial,
 		TLSHandshakeTimeout: 5 * time.Second,
-		IdleConnTimeout:     30 * time.Second,
+		IdleConnTimeout:     60 * time.Second,
 	}
 	// http client
 	var client = &http.Client{
 		Timeout:   time.Second * 10,
 		Transport: netTransport,
 	}
-	TickTack(client, h, m, s)
-	// my_header := GetHeaders(ticket_id, seat_type)
-	// AddTicket(client, ticket_id, seat_type, my_header)
-	// TicketCheck(client, ticket_id, my_header)
+	if need_tick {
+		TickTack(client, 20, 0, 0)
+	}
+	my_header := GetHeaders(ticket_id, seat_type)
+	for i := 0; i < times; i++ {
+		resp := AddTicket(client, ticket_id, seat_type, my_header)
+		if resp == nil {
+			i--
+			time.Sleep(time.Second)
+			continue
+		}
+		log.Println(resp)
+		start := CurrMilli()
+		var show_result_time int64 = 1
+		for {
+			time.Sleep(100 * time.Millisecond)
+			end := CurrMilli()
+			if (end - start) >= 10*1000 {
+				break
+			}
+			if (end - start) < show_result_time*2750 {
+				continue
+			}
+			show_result_time++
+			resp := TicketCheck(client, ticket_id, my_header)
+			if resp == nil {
+				log.Println("TicketCheck response is nil")
+			} else {
+				log.Println(resp)
+				if resp.ReturnObject != "" {
+					break
+				}
+			}
+		}
+	}
 }
