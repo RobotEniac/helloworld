@@ -97,10 +97,13 @@ def ticktack(connection, hh, MM = 0, ss = 0):
     avg_rtt = 0.0
     check_time = 15
     rate = 0.9
+    remain = 5
     for i in range(0, check_time):
-        while time.time() < due_date - (check_time - i) * 2:
+        while time.time() < due_date - (check_time - i) * 2 - remain:
             time.sleep(0.01)
         t1, server_time, t2 = getServerTime(connection)
+        if t1 == None:
+            continue
         dlt = server_time - (t1 + t2) / 2.0
         rtt = t2 - t1
         print "rtt = ", rtt, ", delta_t = ", dlt, "server time = ", datetime.fromtimestamp(server_time),\
@@ -117,6 +120,8 @@ def ticktack(connection, hh, MM = 0, ss = 0):
         i += 1
         if i % 100 == 0:
             t1, server_time, t2 = getServerTime(connection)
+            if t1 == None:
+                continue
             dlt = server_time - (t1 + t2) / 2.0
             rtt = t2 - t1
             print "rtt = ", rtt, ", delta_t = ", dlt, "server time = ", datetime.fromtimestamp(server_time),\
@@ -124,8 +129,11 @@ def ticktack(connection, hh, MM = 0, ss = 0):
         if i > 10000000:
             i = 0
 
-    time.sleep(0.008) # magic number, avoid estimate time > server time
+    time.sleep(0.005) # magic number, avoid estimate time > server time
     t1, t2, t3 = getServerTime(connection)
+    if t1 == None:
+        print "getServertime timeout"
+        return None
     # print "%.6f, %.6f, %.6f" % (t1, dlt, rtt)
     print max_dlt, avg_rtt
     dt1 = datetime.fromtimestamp(due_date)
@@ -139,7 +147,7 @@ if __name__ == '__main__':
     if len(sys.argv) < 4:
         print "Usage:", sys.argv[0], "ticket_id seat_type count [backup_seat_type]."
         exit(1)
-    conn = httplib.HTTPSConnection('shop.48.cn', 443)
+    conn = httplib.HTTPSConnection('shop.48.cn', 443, timeout=2)
     ticktack(conn, 20)
     ticket_id = int(sys.argv[1])
     seat_type = int(sys.argv[2])
