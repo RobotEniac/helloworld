@@ -6,6 +6,7 @@ import re
 import json
 import time
 import sys
+import socket
 from datetime import datetime
 from datetime import date
 from datetime import timedelta
@@ -22,8 +23,8 @@ def getServerTime(connection):
             server_time = float(server_time_str) / 1000.0
             return (client_time1, server_time, client_time2)
         return (None, None, None)
-    except:
-        print "getServertime exception"
+    except (httplib.HTTPException, socket.error) as ex:
+        print "getServertime exception: %s" % ex
         return (None, None, None)
 
 def getCookie(path):
@@ -60,8 +61,8 @@ def ticketCheck(connection, ticket_id, seat_type, headers):
         resp = connection.getresponse()
         print resp.status, resp.reason
         return resp
-    except:
-        print "ticketCheck exception"
+    except (httplib.HTTPException, socket.error) as ex:
+        print "ticketCheck exception: %s" % ex
         return None
 
 def addTicket(connection, ticket_id, seat_type, headers):
@@ -80,8 +81,8 @@ def addTicket(connection, ticket_id, seat_type, headers):
         resp = connection.getresponse()
         print resp.status, resp.reason
         return resp
-    except:
-        print "addTicket exception"
+    except (httplib.HTTPException, socket.error) as ex:
+        print "addTicket exception: %s" % ex
         return None
 
 def ticktack(connection, hh, MM = 0, ss = 0):
@@ -101,6 +102,8 @@ def ticktack(connection, hh, MM = 0, ss = 0):
         while time.time() < due_date - (check_time - i) * 2:
             time.sleep(0.01)
         t1, server_time, t2 = getServerTime(connection)
+        if t1 == None:
+            continue
         dlt = server_time - (t1 + t2) / 2.0
         rtt = t2 - t1
         print "rtt = ", rtt, ", delta_t = ", dlt, "server time = ", datetime.fromtimestamp(server_time),\
@@ -117,6 +120,8 @@ def ticktack(connection, hh, MM = 0, ss = 0):
         i += 1
         if i % 100 == 0:
             t1, server_time, t2 = getServerTime(connection)
+            if t1 == None:
+                continue
             dlt = server_time - (t1 + t2) / 2.0
             rtt = t2 - t1
             print "rtt = ", rtt, ", delta_t = ", dlt, "server time = ", datetime.fromtimestamp(server_time),\
@@ -126,6 +131,8 @@ def ticktack(connection, hh, MM = 0, ss = 0):
 
     time.sleep(0.008) # magic number, avoid estimate time > server time
     t1, t2, t3 = getServerTime(connection)
+    if t1 == None:
+        return None
     # print "%.6f, %.6f, %.6f" % (t1, dlt, rtt)
     print max_dlt, avg_rtt
     dt1 = datetime.fromtimestamp(due_date)
@@ -139,7 +146,7 @@ if __name__ == '__main__':
     if len(sys.argv) < 4:
         print "Usage:", sys.argv[0], "ticket_id seat_type count [backup_seat_type]."
         exit(1)
-    conn = httplib.HTTPSConnection('shop.48.cn', 443)
+    conn = httplib.HTTPSConnection('shop.48.cn', 443, timeout=3)
     ticktack(conn, 20)
     ticket_id = int(sys.argv[1])
     seat_type = int(sys.argv[2])

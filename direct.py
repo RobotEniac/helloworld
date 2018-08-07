@@ -139,7 +139,7 @@ if __name__ == '__main__':
     if len(sys.argv) < 4:
         print "Usage:", sys.argv[0], "ticket_id seat_type count [backup_seat_type]."
         exit(1)
-    conn = httplib.HTTPSConnection('shop.48.cn', 443)
+    conn = httplib.HTTPSConnection('shop.48.cn', 443, timeout=3)
     # ticktack(conn, 20)
     ticket_id = int(sys.argv[1])
     seat_type = int(sys.argv[2])
