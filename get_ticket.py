@@ -98,8 +98,9 @@ def ticktack(connection, hh, MM = 0, ss = 0):
     avg_rtt = 0.0
     check_time = 15
     rate = 0.9
+    remain = 5
     for i in range(0, check_time):
-        while time.time() < due_date - (check_time - i) * 2:
+        while time.time() < due_date - (check_time - i) * 2 - remain:
             time.sleep(0.01)
         t1, server_time, t2 = getServerTime(connection)
         if t1 == None:
@@ -129,9 +130,10 @@ def ticktack(connection, hh, MM = 0, ss = 0):
         if i > 10000000:
             i = 0
 
-    time.sleep(0.008) # magic number, avoid estimate time > server time
+    time.sleep(0.005) # magic number, avoid estimate time > server time
     t1, t2, t3 = getServerTime(connection)
     if t1 == None:
+        print "getServertime timeout"
         return None
     # print "%.6f, %.6f, %.6f" % (t1, dlt, rtt)
     print max_dlt, avg_rtt
