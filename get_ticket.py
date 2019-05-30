@@ -165,6 +165,8 @@ if __name__ == '__main__':
         print "seat_type is %s" % (seat_map[seat_type])
         headers = getHeaders(ticket_id, seat_type)
         res_str = addTicket(conn, ticket_id, seat_type, headers)
+        if res_str == None:
+            conn = httplib.HTTPSConnection('shop.48.cn', 443, timeout=3)
         if res_str and res_str.status == 200:
             res = json.load(res_str, 'utf8')
             print json.dumps(res, ensure_ascii=False, sort_keys=True, indent=4)
