@@ -33,8 +33,8 @@ def getCookie(path):
         cookie = f.readline().strip()
     return cookie
 
-def getHeaders(ticket_id, seat_type):
-    header_ref = 'http://shop.48.cn/tickets/item/' + str(ticket_id) + '?seat_type=' + str(seat_type)
+def getHeaders(item_id):
+    header_ref = 'http://shop.48.cn/Goods/Item/' + str(item_id)
     headers = {
             'Connection': 'keep-alive',
             'Accept': 'application/json, text/javascript, */*; q=0.01',
@@ -65,24 +65,25 @@ def ticketCheck(connection, ticket_id, seat_type, headers):
         print "ticketCheck exception: %s" % ex
         return None
 
-def addTicket(connection, ticket_id, seat_type, headers):
+def buy(connection, goods_attr_one, num, goods_id, attr_id, headers):
     params_dict = {
-            'id': ticket_id,
-            'r': 0.5651687378367096,
-            'num': 1,
-            'seattype': seat_type,
-            'brand_id': 3, # 1: snh48, 2: bej48, 3:gnz48
-            'choose_times_end': -1,
-            }
+        'goods_attr_one': goods_attr_one,
+        'num': num,
+        'donatenum': 0,
+        'goods_id': goods_id,
+        'attr_id': attr_id,
+        #'r': 0.5651687378367096,
+    }
     params = urllib.urlencode(params_dict)
-    url = '/TOrder/add'
+    url = '/order/buy'
     try:
         connection.request('POST', url, params, headers)
         resp = connection.getresponse()
         print resp.status, resp.reason
+        print resp.read()
         return resp
     except (httplib.HTTPException, socket.error) as ex:
-        print "addTicket exception: %s" % ex
+        print "buyGoods exception: %s" % ex
         return None
 
 def ticktack(connection, hh, MM = 0, ss = 0):
@@ -146,30 +147,25 @@ def ticktack(connection, hh, MM = 0, ss = 0):
 
 if __name__ == '__main__':
     if len(sys.argv) < 4:
-        print "Usage:", sys.argv[0], "ticket_id seat_type count [backup_seat_type]."
+        print "Usage:", sys.argv[0], "goods_attr_one num goods_id attr_id"
         exit(1)
-    conn = httplib.HTTPSConnection('shop.48.cn', 443, timeout=3)
-    ticktack(conn, 20)
-    ticket_id = int(sys.argv[1])
-    seat_type = int(sys.argv[2])
-    count = int(sys.argv[3])
-    backup_seat_type = -1
-    if len(sys.argv) >= 5:
-        backup_seat_type = int(sys.argv[4])
 
-    seat_map = {1:"svip", 2:"vip", 3:"seat", 4:"stand"}
+    conn = httplib.HTTPSConnection('shop.48.cn', 443, timeout=3)
+    ticktack(conn, 0)
+    goods_attr_one = sys.argv[1]
+    num = int(sys.argv[2])
+    goods_id = int(sys.argv[3])
+    attr_id = int(sys.argv[4])
+
+    count = 1
+    headers = getHeaders(goods_id)
+    print("starting...")
     for i in range(0, count):
-        if backup_seat_type > 0:
-            if i >= 10:
-                seat_type = backup_seat_type
-        print "seat_type is %s" % (seat_map[seat_type])
-        headers = getHeaders(ticket_id, seat_type)
-        res_str = addTicket(conn, ticket_id, seat_type, headers)
-        if res_str == None:
+        res = buy(conn, goods_attr_one, num, goods_id, attr_id, headers)
+        if res == None:
             conn = httplib.HTTPSConnection('shop.48.cn', 443, timeout=3)
-        if res_str and res_str.status == 200:
-            res = json.load(res_str, 'utf8')
-            print json.dumps(res, ensure_ascii=False, sort_keys=True, indent=4)
+        if res and res.status == 200:
+            print("buy success")
         start_time = time.time()
         last_req = start_time - 2.5
         while True:
@@ -180,7 +176,6 @@ if __name__ == '__main__':
             if end_time - last_req < 3:
                 continue
             last_req = end_time
-            res = ticketCheck(conn, ticket_id, seat_type, headers)
+            res = buy(conn, goods_attr_one, num, goods_id, attr_id, headers)
             if res and res.status == 200:
-                res_json = json.load(res)
-                print json.dumps(res_json, ensure_ascii=False, sort_keys=True, indent=4)
+                print("buy success")
