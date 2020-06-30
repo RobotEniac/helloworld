@@ -6,7 +6,6 @@ import re
 import json
 import time
 import sys
-import socket
 from datetime import datetime
 from datetime import date
 from datetime import timedelta
@@ -24,8 +23,8 @@ def getServerTime(connection):
             server_time = float(server_time_str) / 1000.0
             return (client_time1, server_time, client_time2)
         return (None, None, None)
-    except (http.client.HTTPException, socket.error) as ex:
-        print("getServertime exception: %s" % ex)
+    except:
+        print("getServertime exception")
         return (None, None, None)
 
 
@@ -64,8 +63,8 @@ def ticketCheck(connection, ticket_id, seat_type, headers):
         resp = connection.getresponse()
         print(resp.status, resp.reason)
         return resp
-    except (http.client.HTTPException, socket.error) as ex:
-        print("ticketCheck exception: %s" % ex)
+    except:
+        print("ticketCheck exception")
         return None
 
 
@@ -85,8 +84,8 @@ def addTicket(connection, ticket_id, seat_type, headers):
         resp = connection.getresponse()
         print(resp.status, resp.reason)
         return resp
-    except (http.client.HTTPException, socket.error) as ex:
-        print("addTicket exception: %s" % ex)
+    except:
+        print("addTicket exception")
         return None
 
 
@@ -103,13 +102,10 @@ def ticktack(connection, hh, MM=0, ss=0):
     avg_rtt = 0.0
     check_time = 15
     rate = 0.9
-    remain = 5
     for i in range(0, check_time):
-        while time.time() < due_date - (check_time - i) * 2 - remain:
+        while time.time() < due_date - (check_time - i) * 2:
             time.sleep(0.01)
         t1, server_time, t2 = getServerTime(connection)
-        if t1 == None:
-            continue
         dlt = server_time - (t1 + t2) / 2.0
         rtt = t2 - t1
         print("rtt = ", rtt, ", delta_t = ", dlt, "server time = ", datetime.fromtimestamp(server_time), \
@@ -126,8 +122,6 @@ def ticktack(connection, hh, MM=0, ss=0):
         i += 1
         if i % 100 == 0:
             t1, server_time, t2 = getServerTime(connection)
-            if t1 == None:
-                continue
             dlt = server_time - (t1 + t2) / 2.0
             rtt = t2 - t1
             print("rtt = ", rtt, ", delta_t = ", dlt, "server time = ", datetime.fromtimestamp(server_time), \
@@ -135,11 +129,8 @@ def ticktack(connection, hh, MM=0, ss=0):
         if i > 10000000:
             i = 0
 
-    time.sleep(0.005)  # magic number, avoid estimate time > server time
+    time.sleep(0.008)  # magic number, avoid estimate time > server time
     t1, t2, t3 = getServerTime(connection)
-    if t1 == None:
-        print("getServertime timeout")
-        return None
     # print "%.6f, %.6f, %.6f" % (t1, dlt, rtt)
     print(max_dlt, avg_rtt)
     dt1 = datetime.fromtimestamp(due_date)
@@ -155,7 +146,7 @@ if __name__ == '__main__':
         print("Usage:", sys.argv[0], "ticket_id seat_type count [backup_seat_type].")
         exit(1)
     conn = http.client.HTTPSConnection('shop.48.cn', 443, timeout=3)
-    ticktack(conn, 20)
+    # ticktack(conn, 20)
     ticket_id = int(sys.argv[1])
     seat_type = int(sys.argv[2])
     count = int(sys.argv[3])
@@ -166,15 +157,13 @@ if __name__ == '__main__':
     seat_map = {1: "svip", 2: "vip", 3: "seat", 4: "stand"}
     for i in range(0, count):
         if backup_seat_type > 0:
-            if i >= 10:
+            if i >= 3:
                 seat_type = backup_seat_type
         print("seat_type is %s" % (seat_map[seat_type]))
         headers = getHeaders(ticket_id, seat_type)
         res_str = addTicket(conn, ticket_id, seat_type, headers)
-        if res_str == None:
-            conn = http.client.HTTPSConnection('shop.48.cn', 443, timeout=2)
         if res_str and res_str.status == 200:
-            res = json.load(res_str) 
+            res = json.load(res_str)
             print(json.dumps(res, ensure_ascii=False, sort_keys=True, indent=4))
         start_time = time.time()
         last_req = start_time - 2.5

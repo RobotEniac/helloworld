@@ -11,6 +11,7 @@ from datetime import datetime
 from datetime import date
 from datetime import timedelta
 
+
 def getServerTime(connection):
     try:
         client_time1 = time.time()
@@ -27,33 +28,35 @@ def getServerTime(connection):
         print "getServertime exception: %s" % ex
         return (None, None, None)
 
+
 def getCookie(path):
     cookie = ''
     with open(path, 'r') as f:
         cookie = f.readline().strip()
     return cookie
 
+
 def getHeaders(ticket_id, seat_type):
     header_ref = 'http://shop.48.cn/tickets/item/' + str(ticket_id) + '?seat_type=' + str(seat_type)
     headers = {
-            'Connection': 'keep-alive',
-            'Accept': 'application/json, text/javascript, */*; q=0.01',
-            'Origin': 'http://shop.48.cn',
-            'X-Requested-With': 'XMLHttpRequest',
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36',
-            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-            'Referer': header_ref,
-            'Accept-Encoding': 'gzip, deflate',
-            'Accept-Language': 'en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4,zh-TW;q=0.2',
-            'Upgrade-Insecure-Requests': '1',
-            'Cookie': getCookie("./cookie/haibo.cookie")
-            }
+        'Connection': 'keep-alive',
+        'Accept': 'application/json, text/javascript, */*; q=0.01',
+        'Origin': 'http://shop.48.cn',
+        'X-Requested-With': 'XMLHttpRequest',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36',
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        'Referer': header_ref,
+        'Accept-Encoding': 'gzip, deflate',
+        'Accept-Language': 'en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4,zh-TW;q=0.2',
+        'Upgrade-Insecure-Requests': '1',
+        'Cookie': getCookie("./cookie/haibo.cookie")
+    }
     return headers
 
 
 def ticketCheck(connection, ticket_id, seat_type, headers):
     headers = getHeaders(ticket_id, seat_type)
-    params_dict = {'id': ticket_id, 'r':0.5651687378367096}
+    params_dict = {'id': ticket_id, 'r': 0.5651687378367096}
     params = urllib.urlencode(params_dict)
     url = '/TOrder/tickCheck'
     try:
@@ -65,15 +68,16 @@ def ticketCheck(connection, ticket_id, seat_type, headers):
         print "ticketCheck exception: %s" % ex
         return None
 
+
 def addTicket(connection, ticket_id, seat_type, headers):
     params_dict = {
-            'id': ticket_id,
-            'r': 0.5651687378367096,
-            'num': 1,
-            'seattype': seat_type,
-            'brand_id': 3, # 1: snh48, 2: bej48, 3:gnz48
-            'choose_times_end': -1,
-            }
+        'id': ticket_id,
+        'r': 0.5651687378367096,
+        'num': 1,
+        'seattype': seat_type,
+        'brand_id': 3,  # 1: snh48, 2: bej48, 3:gnz48
+        'choose_times_end': -1,
+    }
     params = urllib.urlencode(params_dict)
     url = '/TOrder/add'
     try:
@@ -85,12 +89,13 @@ def addTicket(connection, ticket_id, seat_type, headers):
         print "addTicket exception: %s" % ex
         return None
 
-def ticktack(connection, hh, MM = 0, ss = 0):
+
+def ticktack(connection, hh, MM=0, ss=0):
     if hh == 0:
         return
     today = date.today()
     due_date = datetime(today.year, today.month, today.day,
-            hh, MM, ss)
+                        hh, MM, ss)
     due_date = time.mktime(due_date.timetuple())
     if due_date < time.time():
         return None;
@@ -107,8 +112,8 @@ def ticktack(connection, hh, MM = 0, ss = 0):
             continue
         dlt = server_time - (t1 + t2) / 2.0
         rtt = t2 - t1
-        print "rtt = ", rtt, ", delta_t = ", dlt, "server time = ", datetime.fromtimestamp(server_time),\
-                "local_time = ", datetime.fromtimestamp((t1 + t2) / 2.0)
+        print "rtt = ", rtt, ", delta_t = ", dlt, "server time = ", datetime.fromtimestamp(server_time), \
+            "local_time = ", datetime.fromtimestamp((t1 + t2) / 2.0)
         if i == 0:
             max_dlt = dlt
             max_rtt = rtt
@@ -116,7 +121,7 @@ def ticktack(connection, hh, MM = 0, ss = 0):
         avg_rtt = avg_rtt * (1 - rate) + (t2 - t1) * rate
     # avg_rtt = avg_rtt / check_time
     i = 0
-    while time.time() + max_dlt + avg_rtt / 2.0  < due_date:
+    while time.time() + max_dlt + avg_rtt / 2.0 < due_date:
         time.sleep(0.01)
         i += 1
         if i % 100 == 0:
@@ -125,12 +130,12 @@ def ticktack(connection, hh, MM = 0, ss = 0):
                 continue
             dlt = server_time - (t1 + t2) / 2.0
             rtt = t2 - t1
-            print "rtt = ", rtt, ", delta_t = ", dlt, "server time = ", datetime.fromtimestamp(server_time),\
-                    "local_time = ", datetime.fromtimestamp((t1 + t2) / 2.0)
+            print "rtt = ", rtt, ", delta_t = ", dlt, "server time = ", datetime.fromtimestamp(server_time), \
+                "local_time = ", datetime.fromtimestamp((t1 + t2) / 2.0)
         if i > 10000000:
             i = 0
 
-    time.sleep(0.005) # magic number, avoid estimate time > server time
+    time.sleep(0.005)  # magic number, avoid estimate time > server time
     t1, t2, t3 = getServerTime(connection)
     if t1 == None:
         print "getServertime timeout"
@@ -143,6 +148,7 @@ def ticktack(connection, hh, MM = 0, ss = 0):
     print "server time: ", dt2
     print "delta: ", t2 - due_date
     return None
+
 
 if __name__ == '__main__':
     if len(sys.argv) < 4:
@@ -157,16 +163,16 @@ if __name__ == '__main__':
     if len(sys.argv) >= 5:
         backup_seat_type = int(sys.argv[4])
 
-    seat_map = {1:"svip", 2:"vip", 3:"seat", 4:"stand"}
+    seat_map = {1: "svip", 2: "vip", 3: "seat", 4: "stand"}
     for i in range(0, count):
         if backup_seat_type > 0:
-            if i >= 3:
+            if i >= 10:
                 seat_type = backup_seat_type
         print "seat_type is %s" % (seat_map[seat_type])
         headers = getHeaders(ticket_id, seat_type)
         res_str = addTicket(conn, ticket_id, seat_type, headers)
         if res_str == None:
-            conn = httplib.HTTPSConnection('shop.48.cn', 443, timeout=3)
+            conn = httplib.HTTPSConnection('shop.48.cn', 443, timeout=2)
         if res_str and res_str.status == 200:
             res = json.load(res_str, 'utf8')
             print json.dumps(res, ensure_ascii=False, sort_keys=True, indent=4)
