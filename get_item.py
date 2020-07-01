@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-import urllib
-import httplib
+import urllib.request, urllib.parse, urllib.error
+import http.client
 import re
 import json
 import time
@@ -23,8 +23,8 @@ def getServerTime(connection):
             server_time = float(server_time_str) / 1000.0
             return (client_time1, server_time, client_time2)
         return (None, None, None)
-    except (httplib.HTTPException, socket.error) as ex:
-        print "getServertime exception: %s" % ex
+    except (http.client.HTTPException, socket.error) as ex:
+        print(("getServertime exception: %s" % ex))
         return (None, None, None)
 
 def getCookie(path):
@@ -54,15 +54,15 @@ def getHeaders(item_id):
 def ticketCheck(connection, ticket_id, seat_type, headers):
     headers = getHeaders(ticket_id, seat_type)
     params_dict = {'id': ticket_id, 'r':0.5651687378367096}
-    params = urllib.urlencode(params_dict)
+    params = urllib.parse.urlencode(params_dict)
     url = '/TOrder/tickCheck'
     try:
         connection.request('GET', url, params, headers)
         resp = connection.getresponse()
-        print resp.status, resp.reason
+        print((resp.status, resp.reason))
         return resp
-    except (httplib.HTTPException, socket.error) as ex:
-        print "ticketCheck exception: %s" % ex
+    except (http.client.HTTPException, socket.error) as ex:
+        print(("ticketCheck exception: %s" % ex))
         return None
 
 def buy(connection, goods_attr_one, num, goods_id, attr_id, headers):
@@ -74,16 +74,16 @@ def buy(connection, goods_attr_one, num, goods_id, attr_id, headers):
         'attr_id': attr_id,
         #'r': 0.5651687378367096,
     }
-    params = urllib.urlencode(params_dict)
+    params = urllib.parse.urlencode(params_dict)
     url = '/order/buy'
     try:
         connection.request('POST', url, params, headers)
         resp = connection.getresponse()
-        print resp.status, resp.reason
-        print resp.read()
+        print((resp.status, resp.reason))
+        print((resp.read()))
         return resp
-    except (httplib.HTTPException, socket.error) as ex:
-        print "buyGoods exception: %s" % ex
+    except (http.client.HTTPException, socket.error) as ex:
+        print(("buyGoods exception: %s" % ex))
         return None
 
 def ticktack(connection, hh, MM = 0, ss = 0):
@@ -108,8 +108,8 @@ def ticktack(connection, hh, MM = 0, ss = 0):
             continue
         dlt = server_time - (t1 + t2) / 2.0
         rtt = t2 - t1
-        print "rtt = ", rtt, ", delta_t = ", dlt, "server time = ", datetime.fromtimestamp(server_time),\
-                "local_time = ", datetime.fromtimestamp((t1 + t2) / 2.0)
+        print(("rtt = ", rtt, ", delta_t = ", dlt, "server time = ", datetime.fromtimestamp(server_time),\
+                "local_time = ", datetime.fromtimestamp((t1 + t2) / 2.0)))
         if i == 0:
             max_dlt = dlt
             max_rtt = rtt
@@ -126,31 +126,31 @@ def ticktack(connection, hh, MM = 0, ss = 0):
                 continue
             dlt = server_time - (t1 + t2) / 2.0
             rtt = t2 - t1
-            print "rtt = ", rtt, ", delta_t = ", dlt, "server time = ", datetime.fromtimestamp(server_time),\
-                    "local_time = ", datetime.fromtimestamp((t1 + t2) / 2.0)
+            print(("rtt = ", rtt, ", delta_t = ", dlt, "server time = ", datetime.fromtimestamp(server_time),\
+                    "local_time = ", datetime.fromtimestamp((t1 + t2) / 2.0)))
         if i > 10000000:
             i = 0
 
     time.sleep(0.005) # magic number, avoid estimate time > server time
     t1, t2, t3 = getServerTime(connection)
     if t1 == None:
-        print "getServertime timeout"
+        print("getServertime timeout")
         return None
     # print "%.6f, %.6f, %.6f" % (t1, dlt, rtt)
-    print max_dlt, avg_rtt
+    print((max_dlt, avg_rtt))
     dt1 = datetime.fromtimestamp(due_date)
     dt2 = datetime.fromtimestamp(t2)
-    print "due date: ", dt1
-    print "server time: ", dt2
-    print "delta: ", t2 - due_date
+    print(("due date: ", dt1))
+    print(("server time: ", dt2))
+    print(("delta: ", t2 - due_date))
     return None
 
 if __name__ == '__main__':
     if len(sys.argv) < 4:
-        print "Usage:", sys.argv[0], "goods_attr_one num goods_id attr_id"
+        print(("Usage:", sys.argv[0], "goods_attr_one num goods_id attr_id"))
         exit(1)
 
-    conn = httplib.HTTPSConnection('shop.48.cn', 443, timeout=3)
+    conn = http.client.HTTPSConnection('shop.48.cn', 443, timeout=3)
     ticktack(conn, 0)
     goods_attr_one = sys.argv[1]
     num = int(sys.argv[2])
@@ -163,7 +163,7 @@ if __name__ == '__main__':
     for i in range(0, count):
         res = buy(conn, goods_attr_one, num, goods_id, attr_id, headers)
         if res == None:
-            conn = httplib.HTTPSConnection('shop.48.cn', 443, timeout=3)
+            conn = http.client.HTTPSConnection('shop.48.cn', 443, timeout=3)
         if res and res.status == 200:
             print("buy success")
         start_time = time.time()
